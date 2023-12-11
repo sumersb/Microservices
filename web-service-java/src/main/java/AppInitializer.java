@@ -1,16 +1,20 @@
 import com.fasterxml.jackson.databind.introspect.TypeResolutionContext;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import org.apache.commons.dbcp2.BasicDataSource;
 import com.rabbitmq.client.ConnectionFactory;
-
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+import javax.servlet.annotation.WebListener;
 
 @WebListener
 public class AppInitializer implements ServletContextListener{
+    private static final String databaseURL = "albumdb.c3hm6sf3alr0.us-west-2.rds.amazonaws.com";
+    private static final String rabbitMQURL = "35.91.193.128";
+    private static final int consumerCount = 3;
+    private static final int channelSize = 20;
     private BasicDataSource dataSource;
     private ConnectionFactory connectionFactory;
     private Connection connection;
@@ -21,11 +25,27 @@ public class AppInitializer implements ServletContextListener{
             dataSource = setupDataSource();
             sce.getServletContext().setAttribute("dataSource", dataSource);
             connectionFactory = createRabbitMQConnectionFactory();
+            System.out.println(connectionFactory);
             sce.getServletContext().setAttribute("rabbitMQSource", connectionFactory);
+            System.out.println("get here 3");
             connection = connectionFactory.newConnection();
+            System.out.println(connection);
+            System.out.println("get here 4");
             sce.getServletContext().setAttribute("connection", connection);
-            RabbitMQChannelPool channelPool = new RabbitMQChannelPool(connection);
+            System.out.println("get here 5");
+            RabbitMQChannelPool channelPool = new RabbitMQChannelPool(connection, channelSize);
+            System.out.println("get here 6");
+            System.out.println(channelPool);
+            System.out.println("get here 7");
             sce.getServletContext().setAttribute("channelPool", channelPool);
+            System.out.println("get here 8");
+            Thread[] consumers = new Thread[consumerCount];
+            for (int i = 0; i < consumerCount; i++) {
+                Channel channel = connection.createChannel();
+                consumers[i] = new SentimentConsumer(channel,dataSource);
+                consumers[i].start();
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -53,7 +73,7 @@ public class AppInitializer implements ServletContextListener{
     private static BasicDataSource setupDataSource() {
         BasicDataSource dataSource = new BasicDataSource();
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://albumdb.c3hm6sf3alr0.us-west-2.rds.amazonaws.com:3306/album_info");
+        dataSource.setUrl("jdbc:mysql://"+databaseURL+":3306/album_info");
         dataSource.setUsername("root");
         dataSource.setPassword("password");
 
@@ -65,12 +85,15 @@ public class AppInitializer implements ServletContextListener{
 
     private ConnectionFactory createRabbitMQConnectionFactory() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("54.245.0.230");
+        System.out.println("1");
+        factory.setHost(rabbitMQURL);
+        System.out.println("2");
         factory.setPort(5672);
+        System.out.println("3");
         factory.setUsername("guest");
+        System.out.println("4");
         factory.setPassword("guest");
-        factory.setRequestedChannelMax(10);
-        // Other configuration options...
+        System.out.println(factory);
         return factory;
     }
 

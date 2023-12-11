@@ -3,32 +3,42 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import com.rabbitmq.client.Channel;
 
+import java.io.IOException;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeoutException;
+
 
 import org.apache.commons.pool2.impl.GenericObjectPool;
 
 public class RabbitMQChannelPool {
-    private final GenericObjectPool<Channel> channelPool;
+    private final LinkedBlockingQueue<Channel> channelPool;
+    Connection connection;
 
-    public RabbitMQChannelPool(Connection connection) {
-        RabbitMQChannelFactory channelFactory = new RabbitMQChannelFactory(connection);
-        // Configure pool parameters (e.g., maxTotal, maxIdle, etc.)
-        GenericObjectPoolConfig<Channel> poolConfig = new GenericObjectPoolConfig<>();
-        poolConfig.setMaxTotal(10); // Maximum number of objects that can be allocated by the pool
-        poolConfig.setMaxIdle(5); // Maximum number of objects that can be sitting idle in the pool
-        poolConfig.setMinIdle(2); // Minimum number of objects that can be sitting idle in the pool
-        poolConfig.setMaxWaitMillis(3000); // Maximum time (in milliseconds) the borrowObject method should block before throwing an exception
-        this.channelPool = new GenericObjectPool<>(channelFactory, poolConfig);
+    public RabbitMQChannelPool(Connection connection, int poolSize) throws IOException {
+        this.connection = connection;
+        channelPool = new LinkedBlockingQueue<>();
+        for (int i = 0; i < poolSize; i++) {
+            channelPool.add(connection.createChannel());
+        }
+        System.out.println("lemon face");
     }
 
     public Channel borrowChannel() throws Exception {
-        return channelPool.borrowObject();
+        return channelPool.poll();
     }
 
-    public void returnChannel(Channel channel) {
-        channelPool.returnObject(channel);
+    public void releaseChannel(Channel channel) {
+        if (channel != null && channel.isOpen()) {
+            channelPool.offer(channel);
+        }
     }
 
-    public void close() {
-        channelPool.close();
+    public void close () throws IOException, TimeoutException {
+        for (Channel channel : channelPool) {
+            channel.close();
+        }
+        connection.close();
     }
+
+
 }
