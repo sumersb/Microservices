@@ -50,22 +50,22 @@ public class Writer extends Thread {
         int callCount = 0;
         int second=0;
 
-//        CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader("Start Time","Request Type","Latency","Response Code");
+        CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader("Start Time","Request Type","Latency","Response Code");
         try {
-//            FileWriter fileWriter = new FileWriter("latency.csv");
-//            CSVPrinter csvPrinter = new CSVPrinter(fileWriter,csvFormat);
+            FileWriter fileWriter = new FileWriter("latency.csv");
+            CSVPrinter csvPrinter = new CSVPrinter(fileWriter,csvFormat);
             while (true) {
                 CallInfo callInfo = callInfoQueue.take();
                 long latency = callInfo.getLatency();
                 if (callInfo.getResponseCode() == -1) {
                     break;
                 } else {
-//                    csvPrinter.printRecord(
-//                            callInfo.getStartTime(),
-//                            callInfo.getRequestType(),
-//                            latency,
-//                            callInfo.getResponseCode()
-//                    );
+                    csvPrinter.printRecord(
+                            callInfo.getStartTime(),
+                            callInfo.getRequestType(),
+                            latency,
+                            callInfo.getResponseCode()
+                    );
                     if (callInfo.getResponseCode() == 200) {
                         getDigest.add(latency);
                         maxGetLatency = Math.max(maxGetLatency,latency);
@@ -84,7 +84,7 @@ public class Writer extends Thread {
 
                     //Calculates and prints throughput every second
                     if (System.currentTimeMillis()>=throughputEndTime) {
-                        System.out.print("("+((throughputEndTime-start)/MILLISECONDS_PER_SECOND)+","+callCount+"),");
+                       // System.out.print("("+((throughputEndTime-start)/MILLISECONDS_PER_SECOND)+","+callCount+"),");
                         throughputEndTime+=MILLISECONDS_PER_SECOND;
                         callCount=1;
                         second+=1;
@@ -93,7 +93,7 @@ public class Writer extends Thread {
                     }
                 }
             }
-//            csvPrinter.close();
+            csvPrinter.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

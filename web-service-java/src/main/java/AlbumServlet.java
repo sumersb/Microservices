@@ -19,6 +19,13 @@ import org.apache.commons.dbcp2.BasicDataSource;
 maxRequestSize = 1024 * 1024)
 public class AlbumServlet extends HttpServlet {
 
+    private static BasicDataSource dataPool;
+
+    public AlbumServlet() throws ServletException {
+        super.init();
+        dataPool = setupDataSource();
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         res.setContentType("text/plain");
@@ -46,7 +53,6 @@ public class AlbumServlet extends HttpServlet {
     }
 
     public void searchAlbum(HttpServletResponse res, String albumID) throws IOException {
-        BasicDataSource dataPool = (BasicDataSource) getServletContext().getAttribute("dataSource");
         try (Connection connection = dataPool.getConnection()){
             String query = "SELECT * FROM albums WHERE album_id = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -85,7 +91,6 @@ public class AlbumServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        System.out.println("This works");
         res.setContentType("application/json");
         String urlPath = req.getRequestURI();
 
@@ -131,7 +136,6 @@ public class AlbumServlet extends HttpServlet {
     private void postAlbumtoDB(AlbumInfo albumInfo,long imageSize, byte[] imageData, HttpServletResponse res) throws IOException {
 
         String query = "INSERT INTO albums (artist, title, year, image_size, image) VALUES (?,?,?,?,?)";
-        BasicDataSource dataPool = (BasicDataSource) getServletContext().getAttribute("dataSource");
         try ( Connection connection = dataPool.getConnection()) {
             String[] key = {"album_id"};
             try (PreparedStatement preparedStatement = connection.prepareStatement(query, key)) {
@@ -169,8 +173,6 @@ public class AlbumServlet extends HttpServlet {
                 return;
             }
             String generatedKey = rs.getString(1);
-            MaxUpdater maxUpdater = (MaxUpdater) getServletContext().getAttribute("maxUpdater");
-            maxUpdater.updateMax(Integer.valueOf(generatedKey));
             writeImageMetaDataToResponse(res, generatedKey, imageSize);
         } catch (SQLException e) {
             handleException(res, "Error processing generated keys",HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -187,6 +189,19 @@ public class AlbumServlet extends HttpServlet {
         res.setStatus(HttpServletResponse.SC_CREATED);
     }
 
+    private static BasicDataSource setupDataSource() {
+        BasicDataSource dataSource = new BasicDataSource();
+        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        dataSource.setUrl("jdbc:mysql://albumdb.c3hm6sf3alr0.us-west-2.rds.amazonaws.com:3306/album_info");
+        dataSource.setUsername("root");
+        dataSource.setPassword("password");
+
+        // Optionally, you can configure additional properties, such as the initial size and max total connections
+        dataSource.setInitialSize(5); // Set the initial number of connections
+        dataSource.setMaxTotal(18);   // Set the maximum number of connections
+
+        return dataSource;
+    }
 
     private byte[] getByteArrayFromPart(Part part) throws IOException {
     InputStream inputStream  = part.getInputStream();

@@ -71,23 +71,35 @@ public class Client extends Thread {
                     System.err.println(postMethod.getResponseBodyAsString());
                 }
                 ImageMetaData postInfo = JsonUtils.jsonToObject(postMethod.getResponseBodyAsString(),ImageMetaData.class);
+
                 postLike.setPath(reviewPath+"/like/"+postInfo.getAlbumID());
-                System.out.println(postLike.getURI());
                 postDislike.setPath(reviewPath+"/dislike/"+postInfo.getAlbumID());
-                for (int j = 0; j < 2; j++) {
-                    statusCode = client.executeMethod(postLike);
-                    if (statusCode != HttpStatus.SC_CREATED) {
-                        System.out.println("Like failed");
-                        System.err.println("Method failed: " + postLike.getStatusLine());
-                        System.err.println(postLike.getResponseBodyAsString());
-                    }
-                    statusCode = client.executeMethod(postDislike);
-                    if (statusCode != HttpStatus.SC_CREATED) {
-                        System.out.println("Dislike failed");
-                        System.err.println("Method failed: " + postDislike.getStatusLine());
-                        System.err.println(postDislike.getResponseBodyAsString());
-                    }
+
+                statusCode = client.executeMethod(postLike);
+                if (statusCode != HttpStatus.SC_CREATED) {
+                    System.out.println("Like failed");
+                    System.err.println("Method failed: " + postLike.getStatusLine());
+                    System.err.println(postLike.getResponseBodyAsString());
                 }
+                postLike.releaseConnection();
+
+                statusCode = client.executeMethod(postLike);
+                if (statusCode != HttpStatus.SC_CREATED) {
+                    System.out.println("Like failed");
+                    System.err.println("Method failed: " + postLike.getStatusLine());
+                    System.err.println(postLike.getResponseBodyAsString());
+                }
+                postLike.releaseConnection();
+
+                statusCode = client.executeMethod(postDislike);
+                if (statusCode != HttpStatus.SC_CREATED) {
+                    System.out.println("Dislike failed");
+                    System.err.println("Method failed: " + postDislike.getStatusLine());
+                    System.err.println(postDislike.getResponseBodyAsString());
+
+                }
+                postDislike.releaseConnection();
+
 
             } catch (HttpException e) {
                 System.err.println("Fatal protocol violation: " + e.getMessage());
@@ -98,7 +110,6 @@ public class Client extends Thread {
             } finally {
                 // Release the connection.
                 postMethod.releaseConnection();
-                postLike.releaseConnection();
             }
         }
     }
@@ -130,44 +141,43 @@ public class Client extends Thread {
                 postLike.setPath(reviewPath+"/like/"+postInfo.getAlbumID());
                 postDislike.setPath(reviewPath+"/dislike/"+postInfo.getAlbumID());
 
-                for (int j = 0 ; j < 2; j++) {
-                    // Send Like request and calculate latency
-                    startTime = System.currentTimeMillis();
-                    statusCode = client.executeMethod(postLike);
-                    if (statusCode != 201) {
-                        System.out.println("Like failed");
-                        System.out.println("Error Message: "+statusCode);
-                        System.out.println(postLike.getResponseBodyAsString());
-                    }
-                    endTime = System.currentTimeMillis();
-                    latency = endTime - startTime;
-                    latencyQueue.add(new CallInfo(startTime, " POST", latency, statusCode));
-
-                    // Send Dislike request and calculate latency
-                    startTime = System.currentTimeMillis();
-                    statusCode = client.executeMethod(postDislike);
-                    if (statusCode != 201) {
-                        System.out.println("Dislike failed");
-                        System.out.println("Error Message: "+statusCode);
-                        System.out.println(postDislike.getResponseBodyAsString());
-                    }
-                    endTime = System.currentTimeMillis();
-                    latency = endTime - startTime;
-
-                    latencyQueue.add(new CallInfo(startTime, " POST", latency, statusCode));
-
-                }
-
                 startTime = System.currentTimeMillis();
                 statusCode = client.executeMethod(postLike);
-                if (statusCode != 200) {
-                    System.out.println("Error Message: "+statusCode);
+                if (statusCode != 201) {
+                    System.out.println("Like failed");
+                    System.out.println("Error Message: " + statusCode);
                     System.out.println(postLike.getResponseBodyAsString());
                 }
                 endTime = System.currentTimeMillis();
                 latency = endTime - startTime;
-                //Takes request information and passes instance of CallInfo to latency Queue
-                latencyQueue.add(new CallInfo(startTime,"GET",latency,statusCode));
+                latencyQueue.add(new CallInfo(startTime, " PostLike", latency, statusCode));
+                postLike.releaseConnection();
+
+                startTime = System.currentTimeMillis();
+                statusCode = client.executeMethod(postLike);
+                if (statusCode != 201) {
+                    System.out.println("Like failed");
+                    System.out.println("Error Message: " + statusCode);
+                    System.out.println(postLike.getResponseBodyAsString());
+                }
+                endTime = System.currentTimeMillis();
+                latency = endTime - startTime;
+                latencyQueue.add(new CallInfo(startTime, " PostLike", latency, statusCode));
+                postLike.releaseConnection();
+
+                // Send Dislike request and calculate latency
+                startTime = System.currentTimeMillis();
+                statusCode = client.executeMethod(postDislike);
+                if (statusCode != 201) {
+                    System.out.println("Dislike failed");
+                    System.out.println("Error Message: " + statusCode);
+                    System.out.println(postDislike.getResponseBodyAsString());
+                }
+                endTime = System.currentTimeMillis();
+                latency = endTime - startTime;
+
+                latencyQueue.add(new CallInfo(startTime, " PostDislike", latency, statusCode));
+                postDislike.releaseConnection();
 
             } catch (HttpException e) {
                 System.err.println("Fatal protocol violation: " + e.getMessage());
@@ -178,7 +188,6 @@ public class Client extends Thread {
             } finally {
                 // Release the connection.
                 postMethod.releaseConnection();
-                postLike.releaseConnection();
             }
         }
     }

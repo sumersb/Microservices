@@ -1,4 +1,5 @@
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import com.rabbitmq.client.Channel;
@@ -14,14 +15,16 @@ public class RabbitMQChannelPool {
     private final LinkedBlockingQueue<Channel> channelPool;
     Connection connection;
 
-    public RabbitMQChannelPool(Connection connection, int poolSize) throws IOException {
+    public RabbitMQChannelPool(Connection connection, int poolSize, String QUEUE_NAME) throws IOException {
         //Set connection of pool
         this.connection = connection;
         //Set storage for channel pool
         channelPool = new LinkedBlockingQueue<>();
         //Create channels for given pool Size
         for (int i = 0; i < poolSize; i++) {
-            channelPool.add(connection.createChannel());
+            Channel channel = connection.createChannel();
+            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+            channelPool.add(channel);
         }
     }
 
@@ -32,7 +35,7 @@ public class RabbitMQChannelPool {
 
     public void releaseChannel(Channel channel) {
         //Waits until channel can be returned to pool
-        if (channel != null && channel.isOpen()) {
+        if (channel != null) {
             channelPool.offer(channel);
         }
     }
@@ -44,6 +47,7 @@ public class RabbitMQChannelPool {
         }
         connection.close();
     }
+
 
 
 }

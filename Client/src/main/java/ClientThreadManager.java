@@ -19,6 +19,8 @@ public class ClientThreadManager {
 
     private int numThreadGroups;
 
+    private static final int REQUESTS_PER_ITERATION = 5;
+
 
     private int delay;
 
@@ -93,20 +95,20 @@ public class ClientThreadManager {
     private void printStats(long startTime, long endTime, Writer writer) {
 
         //ITERATIONS_PER_THREAD multiplied BY 2 to account for get and post request
-        int callSize = numThreadGroups * threadGroupSize * ITERATIONS_PER_THREAD * 2;
+        int callSize = numThreadGroups * threadGroupSize * ITERATIONS_PER_THREAD * REQUESTS_PER_ITERATION;
 
         //Self-explanatory
         float wallTime = (endTime - startTime) * MILLISECOND_TO_SECOND;
 
         float throughput = (float) (writer.getGetSuccess()+writer.getPostSuccess()) / wallTime;
 
-        float getMean = (float) writer.getGetLatencySum() / writer.getGetSuccess();
+//        float getMean = (float) writer.getGetLatencySum() / writer.getGetSuccess();
 
         float postMean = (float) writer.getPostLatencySum() / writer.getPostSuccess();
 
-        double getMedian = writer.getGetDigest().quantile(0.5);
-
-        double getPercentile99 = writer.getGetDigest().quantile(0.99);
+//        double getMedian = writer.getGetDigest().quantile(0.5);
+//
+//        double getPercentile99 = writer.getGetDigest().quantile(0.99);
 
         double postMedian = writer.getPostDigest().quantile(0.5);
 
@@ -126,12 +128,12 @@ public class ClientThreadManager {
         System.out.println("Wall Time: " + wallTime + " seconds");
         System.out.println("Throughput: " + throughput + " calls per second");
 
-        System.out.println();
-        System.out.println("Min Get Latency: " + writer.getMinGetLatency());
-        System.out.println("Get Mean: " + getMean);
-        System.out.println("Get Median: " + getMedian);
-        System.out.println("Get 99 Percentile: " + getPercentile99);
-        System.out.println("Get Max Latency: " + writer.getMaxGetLatency());
+//        System.out.println();
+//        System.out.println("Min Get Latency: " + writer.getMinGetLatency());
+//        System.out.println("Get Mean: " + getMean);
+//        System.out.println("Get Median: " + getMedian);
+//        System.out.println("Get 99 Percentile: " + getPercentile99);
+//        System.out.println("Get Max Latency: " + writer.getMaxGetLatency());
 
         System.out.println();
         System.out.println("Min Post Latency: " + writer.getMinPostLatency());

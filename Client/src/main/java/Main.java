@@ -9,10 +9,8 @@ public class Main {
 
     private static final String LOCAL_JAVA_IP_ADDR = "http://localhost:8080/AlbumStore_war_exploded";
 
-    private static final int ITERATIONS_PER_THREAD = 100;
-
     public static void main(String[] args) throws InterruptedException, FileNotFoundException {
-        ClientThreadManager threadManager = new ClientThreadManager(10,30, 2,LOCAL_JAVA_IP_ADDR);
+        ClientThreadManager threadManager = new ClientThreadManager(10,10, 2,LOCAL_JAVA_IP_ADDR);
         threadManager.callThreads();
     }
 }
