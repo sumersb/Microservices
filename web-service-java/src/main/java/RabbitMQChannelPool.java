@@ -15,25 +15,30 @@ public class RabbitMQChannelPool {
     Connection connection;
 
     public RabbitMQChannelPool(Connection connection, int poolSize) throws IOException {
+        //Set connection of pool
         this.connection = connection;
+        //Set storage for channel pool
         channelPool = new LinkedBlockingQueue<>();
+        //Create channels for given pool Size
         for (int i = 0; i < poolSize; i++) {
             channelPool.add(connection.createChannel());
         }
-        System.out.println("lemon face");
     }
 
     public Channel borrowChannel() throws Exception {
+        //Waits until channel can be taken
         return channelPool.poll();
     }
 
     public void releaseChannel(Channel channel) {
+        //Waits until channel can be returned to pool
         if (channel != null && channel.isOpen()) {
             channelPool.offer(channel);
         }
     }
 
     public void close () throws IOException, TimeoutException {
+        //Close everything
         for (Channel channel : channelPool) {
             channel.close();
         }

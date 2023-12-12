@@ -3,14 +3,16 @@ import java.io.FileNotFoundException;
 public class Main {
     private static final String GO_IP_ADDR = "http://34.208.201.244:8080/albums";
 
-    private static final String JAVA_IP_ADDR = "http://LB-1015171411.us-west-2.elb.amazonaws.com/AlbumStore_war/albums";
+    private static final String JAVA_IP_ADDR = "http://LB-1015171411.us-west-2.elb.amazonaws.com/AlbumStore_war";
 
     private static final String LOCAL_GO_IP_ADDR = "http://localhost:8080/albums";
 
-    private static final String LOCAL_JAVA_IP_ADDR = "http://localhost:8080/AlbumStore_war_exploded/albums";
+    private static final String LOCAL_JAVA_IP_ADDR = "http://localhost:8080/AlbumStore_war_exploded";
+
+    private static final int ITERATIONS_PER_THREAD = 100;
 
     public static void main(String[] args) throws InterruptedException, FileNotFoundException {
-        ClientThreadManager threadManager = new ClientThreadManager(10,30,2,JAVA_IP_ADDR);
+        ClientThreadManager threadManager = new ClientThreadManager(10,30, 2,LOCAL_JAVA_IP_ADDR);
         threadManager.callThreads();
     }
 }

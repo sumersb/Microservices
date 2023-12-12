@@ -14,39 +14,53 @@ public class SentimentServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        System.out.println("here");
+        System.out.println("Im getting hit");
+        //Extract URI from doPost request
         String URI = req.getRequestURI();
+
+        //Validate URI to make sure correct format
         if (URI == null || URI.isEmpty() || !validateURI(URI)) {
             res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             res.getWriter().write(JsonUtils.objectToJson(new ErrorMsg("Invalid URL")));
             return;
         }
-        System.out.println("hola");
+
+        String[] uriSplit = URI.split("/");
+        Integer albumID = Integer.valueOf(uriSplit[uriSplit.length-1]);
+
+        MaxUpdater maxUpdater = (MaxUpdater) getServletContext().getAttribute("maxUpdater");
+
+        if ((Integer)maxUpdater.getMax() < albumID) {
+            res.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            res.getWriter().write(JsonUtils.objectToJson(new ErrorMsg("Album with ID does not exist")));
+            return;
+        }
+        //Initialize pool and channel
         RabbitMQChannelPool pool = null;
         Channel channel = null;
         try {
-            System.out.println("Satsrikal");
+            //Retrieve channelPool from ServletContext
             pool = (RabbitMQChannelPool) getServletContext().getAttribute("channelPool");
-            System.out.println(pool);
+
+            //Borrow channel from pool
             channel = pool.borrowChannel();
-            System.out.println(channel.isOpen());
-            System.out.println("dmsapomdpsaompo");
+
+            //Declare Queue if not already created and send URI to queue
             channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-            System.out.println("lemon");
             channel.basicPublish("", QUEUE_NAME, null, URI.getBytes());
-            System.out.println("we made it");
+
+            res.setStatus(HttpServletResponse.SC_CREATED);
         } catch (Exception e) {
-            System.out.println("nadionsaoindosia");
+            //Checks for errors if error occurs
             System.out.println(e.getMessage());
             res.getWriter().write(JsonUtils.objectToJson(new ErrorMsg(e.getMessage())));
-            res.setStatus(400);
+            res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         } finally {
+            //Returns channel to pool
             if (pool != null && channel != null) {
-                System.out.println("nsaodnaondiowqndomomqpwqdqwdwqdqw");
                 pool.releaseChannel(channel);
             }
         }
-        res.setStatus(HttpServletResponse.SC_OK);
     }
 
     boolean validateURI(String URI) {

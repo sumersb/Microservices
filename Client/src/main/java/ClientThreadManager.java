@@ -1,4 +1,6 @@
 import java.io.FileNotFoundException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.LinkedBlockingQueue;
 import com.tdunning.math.stats.MergingDigest;
 public class ClientThreadManager {
@@ -11,22 +13,27 @@ public class ClientThreadManager {
 
     private static  final int ITERATIONS_PER_STARTUP_THREAD = 100;
 
-    private static final int ITERATIONS_PER_THREAD = 1000 ;
+    private static final int ITERATIONS_PER_THREAD = 100;
 
     private int threadGroupSize;
 
     private int numThreadGroups;
 
+
     private int delay;
 
     private String IPAddr;
 
+    private String path;
 
-    public ClientThreadManager(int threadGroupSize, int numThreadGroups, int delay, String IPAddr) {
+
+    public ClientThreadManager(int threadGroupSize, int numThreadGroups, int delay, String URI) {
         this.threadGroupSize = threadGroupSize;
         this.numThreadGroups = numThreadGroups;
         this.delay = delay;
-        this.IPAddr = IPAddr;
+        parseURL(URI);
+        System.out.println(IPAddr);
+        System.out.println(path);
     }
 
     public void callThreads() throws InterruptedException, FileNotFoundException {
@@ -46,7 +53,7 @@ public class ClientThreadManager {
         }
         // Startup threads initiated
         for (int i = 0; i < threadArray[0].length ; i++) {
-            threadArray[0][i] = new Client(IPAddr,ITERATIONS_PER_STARTUP_THREAD, callInfoQueue, false);
+            threadArray[0][i] = new Client(IPAddr, path,ITERATIONS_PER_STARTUP_THREAD, callInfoQueue, false);
             threadArray[0][i].start();
         }
         //Wait for completion of startup threads
@@ -59,7 +66,7 @@ public class ClientThreadManager {
         //Iterate through threadGroups and start threads with delay in between
         for (int i = 1; i < threadArray.length ; i++) {
             for (int j = 0; j < threadArray[i].length; j++) {
-                threadArray[i][j] = new Client(IPAddr, ITERATIONS_PER_THREAD,callInfoQueue, true);
+                threadArray[i][j] = new Client(IPAddr, path, ITERATIONS_PER_THREAD,callInfoQueue, true);
                 threadArray[i][j].start();
             }
             //Delay between next thread group iteration
@@ -136,6 +143,25 @@ public class ClientThreadManager {
 
     }
 
+    private void parseURL(String URL) {
+        try {
+            URI uri = new URI(URL);
+
+            // Extracting the host (http://localhost:8080)
+            String host = uri.getScheme() + "://" + uri.getHost();
+            if (uri.getPort() != -1) {
+                host += ":" + uri.getPort();
+            }
+
+            // Extracting the path (AlbumStore_war_exploded)
+            String path = uri.getPath().substring(1); // Remove leading slash
+
+            this.IPAddr = host;
+            this.path = path;
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+    }
 
     public int getThreadGroupSize() {
         return threadGroupSize;

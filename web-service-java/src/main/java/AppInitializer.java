@@ -12,39 +12,33 @@ import javax.servlet.annotation.WebListener;
 @WebListener
 public class AppInitializer implements ServletContextListener{
     private static final String databaseURL = "albumdb.c3hm6sf3alr0.us-west-2.rds.amazonaws.com";
-    private static final String rabbitMQURL = "35.91.193.128";
+    private static final String rabbitMQURL = "35.92.39.41";
     private static final int consumerCount = 3;
-    private static final int channelSize = 20;
+    private static final int channelSize = 30;
     private BasicDataSource dataSource;
     private ConnectionFactory connectionFactory;
     private Connection connection;
+    private MaxUpdater maxUpdater;
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
+            maxUpdater = new MaxUpdater<Integer>();
+            sce.getServletContext().setAttribute("maxUpdater", maxUpdater);
             dataSource = setupDataSource();
             sce.getServletContext().setAttribute("dataSource", dataSource);
             connectionFactory = createRabbitMQConnectionFactory();
-            System.out.println(connectionFactory);
             sce.getServletContext().setAttribute("rabbitMQSource", connectionFactory);
-            System.out.println("get here 3");
             connection = connectionFactory.newConnection();
-            System.out.println(connection);
-            System.out.println("get here 4");
-            sce.getServletContext().setAttribute("connection", connection);
-            System.out.println("get here 5");
             RabbitMQChannelPool channelPool = new RabbitMQChannelPool(connection, channelSize);
-            System.out.println("get here 6");
-            System.out.println(channelPool);
-            System.out.println("get here 7");
             sce.getServletContext().setAttribute("channelPool", channelPool);
-            System.out.println("get here 8");
             Thread[] consumers = new Thread[consumerCount];
             for (int i = 0; i < consumerCount; i++) {
                 Channel channel = connection.createChannel();
                 consumers[i] = new SentimentConsumer(channel,dataSource);
                 consumers[i].start();
             }
+            System.out.println("Successfully started");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,15 +79,10 @@ public class AppInitializer implements ServletContextListener{
 
     private ConnectionFactory createRabbitMQConnectionFactory() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
-        System.out.println("1");
         factory.setHost(rabbitMQURL);
-        System.out.println("2");
         factory.setPort(5672);
-        System.out.println("3");
         factory.setUsername("guest");
-        System.out.println("4");
         factory.setPassword("guest");
-        System.out.println(factory);
         return factory;
     }
 

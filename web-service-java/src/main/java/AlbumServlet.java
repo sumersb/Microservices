@@ -85,6 +85,7 @@ public class AlbumServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        System.out.println("This works");
         res.setContentType("application/json");
         String urlPath = req.getRequestURI();
 
@@ -168,6 +169,8 @@ public class AlbumServlet extends HttpServlet {
                 return;
             }
             String generatedKey = rs.getString(1);
+            MaxUpdater maxUpdater = (MaxUpdater) getServletContext().getAttribute("maxUpdater");
+            maxUpdater.updateMax(Integer.valueOf(generatedKey));
             writeImageMetaDataToResponse(res, generatedKey, imageSize);
         } catch (SQLException e) {
             handleException(res, "Error processing generated keys",HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

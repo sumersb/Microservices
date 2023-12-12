@@ -14,6 +14,6 @@
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>SentimentServlet</servlet-name>
-        <url-pattern>/review</url-pattern>
+        <url-pattern>/review/*</url-pattern>
     </servlet-mapping>
 </web-app>
