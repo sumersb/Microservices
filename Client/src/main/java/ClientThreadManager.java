@@ -19,8 +19,7 @@ public class ClientThreadManager {
 
     private int numThreadGroups;
 
-    private static final int REQUESTS_PER_ITERATION = 5;
-
+    private static final int REQUESTS_PER_ITERATION = 4;
 
     private int delay;
 
@@ -100,15 +99,15 @@ public class ClientThreadManager {
         //Self-explanatory
         float wallTime = (endTime - startTime) * MILLISECOND_TO_SECOND;
 
-        float throughput = (float) (writer.getGetSuccess()+writer.getPostSuccess()) / wallTime;
+        float throughput = (float) (writer.getPostSentimentSuccess()+writer.getPostSuccess()) / wallTime;
 
-//        float getMean = (float) writer.getGetLatencySum() / writer.getGetSuccess();
+        float postSentimentMean = (float) writer.getPostSentimentSum() / writer.getPostSentimentSuccess();
 
         float postMean = (float) writer.getPostLatencySum() / writer.getPostSuccess();
 
-//        double getMedian = writer.getGetDigest().quantile(0.5);
-//
-//        double getPercentile99 = writer.getGetDigest().quantile(0.99);
+        double postSentimentMedian = writer.getPostSentimentDigest().quantile(0.5);
+
+        double postSentimentPercentile99 = writer.getPostSentimentDigest().quantile(0.99);
 
         double postMedian = writer.getPostDigest().quantile(0.5);
 
@@ -121,26 +120,26 @@ public class ClientThreadManager {
 
         System.out.println();
         System.out.println("Server Calls: " + callSize);
-        System.out.println("Success: "+ (writer.getGetSuccess()+writer.getPostSuccess()));
-        System.out.println("Failures: "+(callSize-(writer.getGetSuccess()+writer.getPostSuccess())));
+        System.out.println("Success: "+ (writer.getPostSentimentSuccess()+writer.getPostSuccess()));
+        System.out.println("Failures: "+(callSize-(writer.getPostSentimentSuccess()+writer.getPostSuccess())));
 
         System.out.println();
         System.out.println("Wall Time: " + wallTime + " seconds");
         System.out.println("Throughput: " + throughput + " calls per second");
 
-//        System.out.println();
-//        System.out.println("Min Get Latency: " + writer.getMinGetLatency());
-//        System.out.println("Get Mean: " + getMean);
-//        System.out.println("Get Median: " + getMedian);
-//        System.out.println("Get 99 Percentile: " + getPercentile99);
-//        System.out.println("Get Max Latency: " + writer.getMaxGetLatency());
+        System.out.println();
+        System.out.println("Min Sentiment Latency: " + writer.getMinPostSentimentLatency());
+        System.out.println("Sentiment Mean: " + postSentimentMean);
+        System.out.println("Sentiment Median: " + postSentimentMedian);
+        System.out.println("Sentiment 99 Percentile: " + postSentimentPercentile99);
+        System.out.println("Sentiment Max Latency: " + writer.getMaxPostSentimentLatency());
 
         System.out.println();
-        System.out.println("Min Post Latency: " + writer.getMinPostLatency());
-        System.out.println("Post Mean: " + postMean);
-        System.out.println("Post Median: " + postMedian);
-        System.out.println("Post 99 Percentile: " + postPercentile99);
-        System.out.println("Post Max Latency: " + writer.getMaxPostLatency());
+        System.out.println("Min Post Album Latency: " + writer.getMinPostLatency());
+        System.out.println("Post Album Mean: " + postMean);
+        System.out.println("Post Album Median: " + postMedian);
+        System.out.println("Post Album 99 Percentile: " + postPercentile99);
+        System.out.println("Post Album Max Latency: " + writer.getMaxPostLatency());
 
 
     }

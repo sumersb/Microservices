@@ -15,11 +15,11 @@ public class Writer extends Thread {
 
     private LinkedBlockingQueue<CallInfo> callInfoQueue;
 
-    private int getSuccess = 0;
+    private int postSentimentSuccess = 0;
 
     private int postSuccess = 0;
 
-    private long getLatencySum = 0;
+    private long postSentimentSum = 0;
 
     private long postLatencySum = 0;
 
@@ -27,13 +27,13 @@ public class Writer extends Thread {
 
     private long minPostLatency = Long.MAX_VALUE;
 
-    private long maxGetLatency = 0;
+    private long maxPostSentimentLatency = 0;
 
-    private long minGetLatency = Long.MAX_VALUE;
+    private long minPostSentimentLatency = Long.MAX_VALUE;
 
     private final int MILLISECONDS_PER_SECOND = 1000;
 
-    private MergingDigest getDigest = new MergingDigest(50,1000,100);
+    private MergingDigest postSentimentDigest = new MergingDigest(50,1000,100);
     private MergingDigest postDigest = new MergingDigest(50,1000,100);
 
 
@@ -66,14 +66,14 @@ public class Writer extends Thread {
                             latency,
                             callInfo.getResponseCode()
                     );
-                    if (callInfo.getResponseCode() == 200) {
-                        getDigest.add(latency);
-                        maxGetLatency = Math.max(maxGetLatency,latency);
-                        minGetLatency = Math.min(minGetLatency,latency);
-                        getSuccess += 1;
-                        getLatencySum += latency;
+                    if (callInfo.getRequestType().equals("PostSentiment")) {
+                        postSentimentDigest.add(latency);
+                        maxPostSentimentLatency = Math.max(maxPostSentimentLatency,latency);
+                        minPostSentimentLatency = Math.min(minPostSentimentLatency,latency);
+                        postSentimentSuccess += 1;
+                        postSentimentSum += latency;
 
-                    } else if (callInfo.getResponseCode() == 201) {
+                    } else if (callInfo.getRequestType().equals("PostAlbum")) {
                         postDigest.add(latency);
                         maxPostLatency = Math.max(maxPostLatency,latency);
                         minPostLatency = Math.min(minPostLatency,latency);
@@ -84,7 +84,7 @@ public class Writer extends Thread {
 
                     //Calculates and prints throughput every second
                     if (System.currentTimeMillis()>=throughputEndTime) {
-                       // System.out.print("("+((throughputEndTime-start)/MILLISECONDS_PER_SECOND)+","+callCount+"),");
+                       System.out.print("("+((throughputEndTime-start)/MILLISECONDS_PER_SECOND)+","+callCount+"),");
                         throughputEndTime+=MILLISECONDS_PER_SECOND;
                         callCount=1;
                         second+=1;
@@ -105,88 +105,33 @@ public class Writer extends Thread {
         return callInfoQueue;
     }
 
-    public void setCallInfoQueue(LinkedBlockingQueue<CallInfo> callInfoQueue) {
-        this.callInfoQueue = callInfoQueue;
-    }
-
-    public MergingDigest getGetDigest() {
-        return getDigest;
-    }
-
-    public void setGetDigest(MergingDigest getDigest) {
-        this.getDigest = getDigest;
-    }
-
     public MergingDigest getPostDigest() {
         return postDigest;
-    }
-
-    public void setPostDigest(MergingDigest postDigest) {
-        this.postDigest = postDigest;
     }
 
     public long getMaxPostLatency() {
         return maxPostLatency;
     }
 
-    public void setMaxPostLatency(long maxPostLatency) {
-        this.maxPostLatency = maxPostLatency;
-    }
-
     public long getMinPostLatency() {
         return minPostLatency;
-    }
-
-    public void setMinPostLatency(long minPostLatency) {
-        this.minPostLatency = minPostLatency;
-    }
-
-    public long getMaxGetLatency() {
-        return maxGetLatency;
-    }
-
-    public void setMaxGetLatency(long maxGetLatency) {
-        this.maxGetLatency = maxGetLatency;
-    }
-
-    public long getMinGetLatency() {
-        return minGetLatency;
-    }
-
-    public void setMinGetLatency(long minGetLatency) {
-        this.minGetLatency = minGetLatency;
-    }
-
-    public int getGetSuccess() {
-        return getSuccess;
-    }
-
-    public void setGetSuccess(int getSuccess) {
-        this.getSuccess = getSuccess;
     }
 
     public int getPostSuccess() {
         return postSuccess;
     }
 
-    public void setPostSuccess(int postSuccess) {
-        this.postSuccess = postSuccess;
-    }
-
-    public long getGetLatencySum() {
-        return getLatencySum;
-    }
-
-    public void setGetLatencySum(long getLatencySum) {
-        this.getLatencySum = getLatencySum;
-    }
-
     public long getPostLatencySum() {
         return postLatencySum;
     }
 
-    public void setPostLatencySum(long postLatencySum) {
-        this.postLatencySum = postLatencySum;
-    }
+    public MergingDigest getPostSentimentDigest() {return postSentimentDigest;}
 
+    public int getPostSentimentSuccess() {return postSentimentSuccess;}
+
+    public long getPostSentimentSum() {return postSentimentSum;}
+
+    public long getMaxPostSentimentLatency() {return maxPostSentimentLatency;}
+
+    public long getMinPostSentimentLatency() {return minPostSentimentLatency;}
 }
